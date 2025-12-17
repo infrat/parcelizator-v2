@@ -41,7 +41,7 @@ class App {
     this._initializeMap();
     this._bindEventListeners();
     this._updateUI();
-    
+
     // Initialize analytics (handles consent banner)
     analyticsService.initialize();
 
@@ -339,7 +339,10 @@ class App {
       this._setAddButtonLoading(true);
       try {
         const result = await uldkService.getParcelByCoordinates(lng, lat);
-        await this._addParcelToList(result, { fitBounds: false, method: "map_click" });
+        await this._addParcelToList(result, {
+          fitBounds: false,
+          method: "map_click",
+        });
       } catch (error) {
         this._showStatus(error.message, "error");
       } finally {
@@ -355,7 +358,10 @@ class App {
    * @param {boolean} options.fitBounds - Whether to fit map bounds to the new parcel
    * @private
    */
-  async _addParcelToList(result, { fitBounds = true, method = "unknown" } = {}) {
+  async _addParcelToList(
+    result,
+    { fitBounds = true, method = "unknown" } = {}
+  ) {
     try {
       // Check if parcel already in list
       if (this._parcels.some((p) => p.id === result.id)) {
@@ -394,7 +400,7 @@ class App {
       this._updateUI();
       this._updateStats();
       this._showStatus(`Dodano działkę: ${result.id}`, "success");
-      
+
       // Track analytics
       analyticsService.trackParcelAdd(method, result.id);
     } catch (error) {
@@ -615,6 +621,7 @@ class App {
       .map(
         (item) => `
         <div class="queue-item" data-id="${item.id}">
+          <span class="queue-color"></span>
           <span class="queue-coords">${item.lat.toFixed(6)}, ${item.lng.toFixed(
           6
         )}</span>
@@ -720,7 +727,7 @@ class App {
       if (this._showingPolygons) layers.push("obrysy");
       if (this._showingPoints) layers.push("punkty");
       this._showStatus(`Pobrano plik KML (${layers.join(", ")})`, "success");
-      
+
       // Track analytics
       analyticsService.trackFileDownload("kml", this._parcels.length);
     } catch (error) {
@@ -762,7 +769,7 @@ class App {
         `Pobrano plik GeoPackage (${layers.join(", ")})`,
         "success"
       );
-      
+
       // Track analytics
       analyticsService.trackFileDownload("gpkg", this._parcels.length);
     } catch (error) {
@@ -802,7 +809,7 @@ class App {
         `Pobrano plik GeoJSON (${layers.join(", ")})`,
         "success"
       );
-      
+
       // Track analytics
       analyticsService.trackFileDownload("geojson", this._parcels.length);
     } catch (error) {

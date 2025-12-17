@@ -73,7 +73,9 @@ export const CONFIG = {
     // Placeholder replaced during deploy by GitHub Actions
     GA_MEASUREMENT_ID: "GA_MEASUREMENT_ID_PLACEHOLDER",
     // Debug mode - logs events to console instead of sending to GA
-    DEBUG: window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1",
+    DEBUG:
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1",
     // LocalStorage key for consent
     CONSENT_KEY: "parcelizator_analytics_consent",
     // Event names

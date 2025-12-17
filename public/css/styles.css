@@ -808,7 +808,7 @@ footer {
 }
 
 .coordinate-queue-items {
-  max-height: 150px;
+  max-height: 200px;
   overflow-y: auto;
 }
 
@@ -816,23 +816,34 @@ footer {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px;
-  background: #fff8e1;
+  padding: 8px 10px;
+  background: #f8f9fa;
   border-radius: 6px;
-  margin-bottom: 4px;
-  font-size: 0.8rem;
-  border-left: 3px solid #ffa000;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  transition: background 0.2s;
 }
 
 .queue-item:hover {
-  background: #ffecb3;
+  background: #e9ecef;
+}
+
+.queue-item .queue-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  background: #ffa000;
 }
 
 .queue-item .queue-coords {
   flex: 1;
   font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-  font-size: 0.75rem;
-  color: #666;
+  font-size: 0.8rem;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .queue-item .queue-label {
@@ -850,7 +861,7 @@ footer {
   color: #999;
   cursor: pointer;
   padding: 2px 6px;
-  font-size: 0.9rem;
+  font-size: 1rem;
   line-height: 1;
   border-radius: 4px;
   transition: all 0.2s;
