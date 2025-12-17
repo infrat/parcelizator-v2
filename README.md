@@ -6,15 +6,15 @@ Aplikacja webowa do pobierania i wizualizacji geometrii działek ewidencyjnych z
 
 ## Funkcjonalności
 
-- 🔍 **Wyszukiwanie działek** - po numerze EGiB, współrzędnych lub adresie
-- 🗺️ **Mapa interaktywna** - Leaflet z podkładem OpenStreetMap
-- 📍 **Warstwa katastralna** - WMS GUGiK widoczna przy dużym zoomie (17+)
-- 📋 **Lista działek** - dodawanie wielu działek do analizy
-- 📤 **Eksport danych**:
+- **Wyszukiwanie działek** - po numerze EGiB, współrzędnych lub adresie
+- **Mapa interaktywna** - Leaflet z podkładem OpenStreetMap
+- **Warstwa katastralna** - WMS GUGiK widoczna przy dużym zoomie (17+)
+- **Lista działek** - dodawanie wielu działek do analizy
+- **Eksport danych**:
   - KML (Google Earth)
   - GeoPackage (QGIS, ArcGIS)
   - GeoJSON (uniwersalny format GIS)
-- 🎨 **Widoki** - obrysy działek i/lub punkty graniczne
+- **Widoki** - obrysy działek i/lub punkty graniczne
 
 ## Technologie
 
