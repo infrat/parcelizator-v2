@@ -184,11 +184,16 @@ class App {
 
     // For address searches, show autocomplete results
     if (searchType === SearchType.ADDRESS && value.length >= 3) {
+      // Show loading indicator while searching
+      this._setAddButtonLoading(true);
+      
       searchService.geocodeAddressDebounced(value, (results) => {
+        this._setAddButtonLoading(false);
         this._showSearchResults(results);
       });
     } else {
       searchService.cancelPendingGeocode();
+      this._setAddButtonLoading(false);
       this._hideSearchResults();
     }
   }
@@ -620,7 +625,9 @@ class App {
     container.innerHTML = queue
       .map(
         (item) => `
-        <div class="queue-item" data-id="${item.id}" data-lat="${item.lat}" data-lng="${item.lng}">
+        <div class="queue-item" data-id="${item.id}" data-lat="${
+          item.lat
+        }" data-lng="${item.lng}">
           <span class="queue-color"></span>
           <span class="queue-coords">${item.lat.toFixed(6)}, ${item.lng.toFixed(
           6
