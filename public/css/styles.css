@@ -1096,3 +1096,45 @@ footer {
     text-align: center;
   }
 }
+
+/* Leaflet geolocation control */
+.leaflet-control-geolocation {
+  background: white;
+}
+
+.leaflet-control-geolocation-button {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  color: #333;
+  text-decoration: none;
+}
+
+.leaflet-control-geolocation-button:hover {
+  background: #f4f4f4;
+  color: #4285f4;
+}
+
+.leaflet-control-geolocation-button.active {
+  color: #4285f4;
+}
+
+.leaflet-control-geolocation-button svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.leaflet-control-geolocation-button.loading {
+  pointer-events: none;
+}
+
+.leaflet-control-geolocation-button.loading svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

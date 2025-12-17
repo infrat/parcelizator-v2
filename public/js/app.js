@@ -186,7 +186,7 @@ class App {
     if (searchType === SearchType.ADDRESS && value.length >= 3) {
       // Show loading indicator while searching
       this._setAddButtonLoading(true);
-      
+
       searchService.geocodeAddressDebounced(value, (results) => {
         this._setAddButtonLoading(false);
         this._showSearchResults(results);

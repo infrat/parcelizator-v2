@@ -16,6 +16,8 @@ class MapService {
   _queueMarkers = {}; // Map of id -> marker
   _wmsLayer = null;
   _onMapClickCallback = null;
+  _locationMarker = null;
+  _locationCircle = null;
 
   /**
    * Initialize Leaflet map
@@ -51,6 +53,9 @@ class MapService {
 
     // Initialize WMS cadastral layer (GUGiK KIEG)
     this._initWmsLayer();
+
+    // Add geolocation control button
+    this._initGeolocationControl();
 
     // Set up click handler
     this._map.on("click", (e) => {
@@ -428,6 +433,148 @@ class MapService {
     } else {
       this._map.removeLayer(this._pointsLayer);
     }
+  }
+
+  /**
+   * Initialize geolocation control button
+   * @private
+   */
+  _initGeolocationControl() {
+    const GeolocationControl = L.Control.extend({
+      options: {
+        position: "topright",
+      },
+
+      onAdd: () => {
+        const container = L.DomUtil.create("div", "leaflet-bar leaflet-control leaflet-control-geolocation");
+        const button = L.DomUtil.create("a", "leaflet-control-geolocation-button", container);
+        
+        button.href = "#";
+        button.title = "Moja lokalizacja";
+        button.setAttribute("role", "button");
+        button.setAttribute("aria-label", "Moja lokalizacja");
+        button.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2m0 16v2m10-10h-2M4 12H2"></path>
+          </svg>
+        `;
+
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.on(button, "click", (e) => {
+          L.DomEvent.preventDefault(e);
+          this._locateUser(button);
+        });
+
+        return container;
+      },
+    });
+
+    new GeolocationControl().addTo(this._map);
+  }
+
+  /**
+   * Locate user using browser geolocation
+   * @private
+   */
+  _locateUser(button) {
+    // Toggle off if already showing location
+    if (this._locationMarker) {
+      this._hideUserLocation();
+      button.classList.remove("active");
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      alert("Twoja przeglądarka nie obsługuje geolokalizacji.");
+      return;
+    }
+
+    // Add loading state
+    button.classList.add("loading");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        button.classList.remove("loading");
+        button.classList.add("active");
+        const { latitude, longitude, accuracy } = position.coords;
+        this._showUserLocation(latitude, longitude, accuracy);
+      },
+      (error) => {
+        button.classList.remove("loading");
+        let message = "Nie udało się pobrać lokalizacji.";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            message = "Odmówiono dostępu do lokalizacji.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            message = "Lokalizacja niedostępna.";
+            break;
+          case error.TIMEOUT:
+            message = "Przekroczono czas oczekiwania na lokalizację.";
+            break;
+        }
+        alert(message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      }
+    );
+  }
+
+  /**
+   * Hide user location marker and circle
+   * @private
+   */
+  _hideUserLocation() {
+    if (this._locationMarker) {
+      this._map.removeLayer(this._locationMarker);
+      this._locationMarker = null;
+    }
+    if (this._locationCircle) {
+      this._map.removeLayer(this._locationCircle);
+      this._locationCircle = null;
+    }
+  }
+
+  /**
+   * Show user location on map with marker and accuracy circle
+   * @private
+   */
+  _showUserLocation(lat, lng, accuracy) {
+    // Remove previous location marker and circle
+    if (this._locationMarker) {
+      this._map.removeLayer(this._locationMarker);
+    }
+    if (this._locationCircle) {
+      this._map.removeLayer(this._locationCircle);
+    }
+
+    // Create accuracy circle
+    this._locationCircle = L.circle([lat, lng], {
+      radius: accuracy,
+      color: "#4285f4",
+      fillColor: "#4285f4",
+      fillOpacity: 0.15,
+      weight: 1,
+    }).addTo(this._map);
+
+    // Create pulsing marker for user location (blue dot style like Google Maps)
+    this._locationMarker = L.circleMarker([lat, lng], {
+      radius: 8,
+      color: "#fff",
+      fillColor: "#4285f4",
+      fillOpacity: 1,
+      weight: 3,
+    }).addTo(this._map);
+
+    // Fit view to show accuracy circle
+    this._map.fitBounds(this._locationCircle.getBounds(), {
+      maxZoom: 17,
+      padding: [50, 50],
+    });
   }
 }
 
