@@ -620,7 +620,7 @@ class App {
     container.innerHTML = queue
       .map(
         (item) => `
-        <div class="queue-item" data-id="${item.id}">
+        <div class="queue-item" data-id="${item.id}" data-lat="${item.lat}" data-lng="${item.lng}">
           <span class="queue-color"></span>
           <span class="queue-coords">${item.lat.toFixed(6)}, ${item.lng.toFixed(
           6
@@ -630,11 +630,27 @@ class App {
               ? `<span class="queue-label" title="${item.label}">${item.label}</span>`
               : ""
           }
+          <button class="btn-locate" title="Pokaż na mapie">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 2v4m0 12v4m10-10h-4M6 12H2"></path>
+            </svg>
+          </button>
           <button class="btn-remove" title="Usuń z kolejki">×</button>
         </div>
       `
       )
       .join("");
+
+    // Attach locate handlers
+    container.querySelectorAll(".btn-locate").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const item = e.target.closest(".queue-item");
+        const lat = Number.parseFloat(item.dataset.lat);
+        const lng = Number.parseFloat(item.dataset.lng);
+        mapService.setView(lat, lng, 18);
+      });
+    });
 
     // Attach remove handlers
     container.querySelectorAll(".btn-remove").forEach((btn) => {
@@ -1020,11 +1036,22 @@ class App {
     [...this._parcels].reverse().forEach((parcel) => {
       const item = document.createElement("div");
       item.className = "parcel-list-item";
+      item.dataset.parcelId = parcel.id;
       item.innerHTML = `
         <span class="parcel-color" style="background: ${this._parcelColor}"></span>
         <span class="parcel-id" title="${parcel.id}">${parcel.id}</span>
+        <button class="btn-locate" title="Pokaż na mapie">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 2v4m0 12v4m10-10h-4M6 12H2"></path>
+          </svg>
+        </button>
         <button class="btn-remove" title="Usuń działkę">×</button>
       `;
+
+      item.querySelector(".btn-locate").addEventListener("click", () => {
+        mapService.fitToCoordinates(parcel.vertices);
+      });
 
       item.querySelector(".btn-remove").addEventListener("click", () => {
         this._removeParcel(parcel.id);

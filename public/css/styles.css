@@ -653,6 +653,10 @@ footer {
   flex: 1;
 }
 
+.search-input-row input::placeholder {
+  font-size: 0.75rem;
+}
+
 .btn-add {
   flex-shrink: 0;
   width: 48px;
@@ -870,6 +874,30 @@ footer {
 .queue-item .btn-remove:hover {
   color: #c62828;
   background: #ffebee;
+}
+
+/* Locate button - shared style for queue and parcel list */
+.btn-locate {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-locate:hover {
+  color: #667eea;
+  background: #e8eaf6;
+}
+
+.btn-locate svg {
+  display: block;
 }
 
 .queue-empty {
