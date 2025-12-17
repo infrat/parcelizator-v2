@@ -18,6 +18,10 @@ class App {
   // Parcel list (multiple parcels)
   _parcels = [];
 
+  // Coordinate queue for batch processing
+  _coordinateQueue = [];
+  _nextQueueId = 1;
+
   // Fixed color for all parcels
   _parcelColor = "#c62828";
 
@@ -50,6 +54,14 @@ class App {
       searchResults: document.getElementById("searchResults"),
       searchContainer: document.querySelector(".search-container"),
       addParcelBtn: document.getElementById("addParcelBtn"),
+      queueModeCheckbox: document.getElementById("queueModeCheckbox"),
+      // Coordinate queue elements
+      coordinateQueue: document.getElementById("coordinateQueue"),
+      queueItems: document.getElementById("queueItems"),
+      queueCount: document.getElementById("queueCount"),
+      processQueueBtn: document.getElementById("processQueueBtn"),
+      clearQueueBtn: document.getElementById("clearQueueBtn"),
+      // Parcel list elements
       parcelList: document.getElementById("parcelList"),
       parcelListItems: document.getElementById("parcelListItems"),
       parcelListCount: document.getElementById("parcelListCount"),
@@ -111,6 +123,15 @@ class App {
       this._clearAllParcels();
     });
 
+    // Queue buttons
+    this._elements.processQueueBtn.addEventListener("click", () => {
+      this._processQueue();
+    });
+
+    this._elements.clearQueueBtn.addEventListener("click", () => {
+      this._clearQueue();
+    });
+
     // Close search results when clicking outside
     document.addEventListener("click", (e) => {
       if (!this._elements.searchContainer.contains(e.target)) {
@@ -153,9 +174,7 @@ class App {
 
     // For address searches, show autocomplete results
     if (searchType === SearchType.ADDRESS && value.length >= 3) {
-      this._setSearchLoading(true);
       searchService.geocodeAddressDebounced(value, (results) => {
-        this._setSearchLoading(false);
         this._showSearchResults(results);
       });
     } else {
@@ -180,7 +199,7 @@ class App {
     try {
       switch (searchType) {
         case SearchType.COORDINATES:
-          await this._addParcelByCoordinates(query);
+          this._addParcelByCoordinates(query);
           break;
         case SearchType.PARCEL_ID:
           await this._addParcelById(query);
@@ -196,7 +215,15 @@ class App {
   }
 
   /**
-   * Add parcel by coordinates
+   * Check if queue mode is enabled
+   * @private
+   */
+  _isQueueMode() {
+    return this._elements.queueModeCheckbox?.checked ?? false;
+  }
+
+  /**
+   * Add coordinates - either to queue or directly fetch parcel
    * @private
    */
   async _addParcelByCoordinates(query) {
@@ -206,19 +233,25 @@ class App {
       throw new Error("Nieprawidłowy format współrzędnych");
     }
 
-    this._showStatus("Szukam działki...", "loading");
-    this._setAddButtonLoading(true);
-
-    try {
-      const result = await uldkService.getParcelByCoordinates(
-        coords.lng,
-        coords.lat
-      );
-      await this._addParcelToList(result);
-    } catch (error) {
-      this._showStatus(error.message, "error");
-    } finally {
-      this._setAddButtonLoading(false);
+    if (this._isQueueMode()) {
+      this._addToQueue(coords.lat, coords.lng, "Współrzędne", { flyTo: true });
+      this._elements.searchInput.value = "";
+    } else {
+      // Direct mode - fetch parcel immediately
+      this._showStatus("Szukam działki...", "loading");
+      this._setAddButtonLoading(true);
+      try {
+        const result = await uldkService.getParcelByCoordinates(
+          coords.lng,
+          coords.lat
+        );
+        await this._addParcelToList(result);
+        this._elements.searchInput.value = "";
+      } catch (error) {
+        this._showStatus(error.message, "error");
+      } finally {
+        this._setAddButtonLoading(false);
+      }
     }
   }
 
@@ -241,27 +274,44 @@ class App {
   }
 
   /**
-   * Add parcel from geocoded address
+   * Add address coordinates - either to queue or directly fetch parcel
    * @private
    */
   async _addParcelByAddress(lat, lng, displayName) {
     this._hideSearchResults();
-    this._elements.searchInput.value = displayName;
+    this._elements.searchInput.value = "";
 
-    this._showStatus("Szukam działki...", "loading");
-    this._setAddButtonLoading(true);
-
-    try {
-      const result = await uldkService.getParcelByCoordinates(lng, lat);
-      await this._addParcelToList(result);
-    } catch (error) {
-      this._showStatus(error.message, "error");
-    } finally {
-      this._setAddButtonLoading(false);
+    if (this._isQueueMode()) {
+      // Queue mode - add to queue
+      const shortLabel =
+        displayName.length > 30
+          ? displayName.substring(0, 30) + "..."
+          : displayName;
+      this._addToQueue(
+        Number.parseFloat(lat),
+        Number.parseFloat(lng),
+        shortLabel,
+        { flyTo: true }
+      );
+    } else {
+      // Direct mode - fetch parcel immediately
+      this._showStatus("Szukam działki...", "loading");
+      this._setAddButtonLoading(true);
+      try {
+        const result = await uldkService.getParcelByCoordinates(
+          Number.parseFloat(lng),
+          Number.parseFloat(lat)
+        );
+        await this._addParcelToList(result);
+      } catch (error) {
+        this._showStatus(error.message, "error");
+      } finally {
+        this._setAddButtonLoading(false);
+      }
     }
   }
   /**
-   * Handle map click event - adds parcel at clicked location
+   * Handle map click event - adds to queue or fetches directly based on mode
    * @private
    */
   async _handleMapClick(latlng) {
@@ -271,16 +321,20 @@ class App {
     this._elements.searchInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     this._updateSearchTypeBadges(SearchType.COORDINATES);
 
-    this._showStatus("Szukam działki...", "loading");
-    this._setAddButtonLoading(true);
-
-    try {
-      const result = await uldkService.getParcelByCoordinates(lng, lat);
-      await this._addParcelToList(result, { fitBounds: false });
-    } catch (error) {
-      this._showStatus(error.message, "error");
-    } finally {
-      this._setAddButtonLoading(false);
+    if (this._isQueueMode()) {
+      this._addToQueue(lat, lng, "Klik na mapę");
+    } else {
+      // Direct mode - fetch parcel immediately
+      this._showStatus("Szukam działki...", "loading");
+      this._setAddButtonLoading(true);
+      try {
+        const result = await uldkService.getParcelByCoordinates(lng, lat);
+        await this._addParcelToList(result, { fitBounds: false });
+      } catch (error) {
+        this._showStatus(error.message, "error");
+      } finally {
+        this._setAddButtonLoading(false);
+      }
     }
   }
 
@@ -365,6 +419,209 @@ class App {
     this._updateUI();
     this._updateStats();
     this._hideStatus();
+  }
+
+  // ==================== COORDINATE QUEUE ====================
+
+  /**
+   * Add coordinates to the queue
+   * @param {number} lat - Latitude
+   * @param {number} lng - Longitude
+   * @param {string} label - Label for the queue item (e.g., "Klik na mapę", address)
+   * @param {Object} options - Options
+   * @param {boolean} options.flyTo - Whether to zoom map to the coordinates
+   * @private
+   */
+  _addToQueue(lat, lng, label = "", { flyTo = false } = {}) {
+    const id = this._nextQueueId++;
+
+    // Add marker to map
+    mapService.addQueueMarker(lat, lng, id);
+
+    // Add to beginning of queue (newest first)
+    this._coordinateQueue.unshift({
+      id,
+      lat,
+      lng,
+      label,
+    });
+
+    // Zoom to the new point if requested
+    if (flyTo) {
+      mapService.setView(lat, lng, 18);
+    }
+
+    this._updateQueueUI();
+    this._showStatus(`Dodano punkt do kolejki`, "success");
+  }
+
+  /**
+   * Remove item from queue by ID
+   * @param {number} id - Queue item ID
+   * @private
+   */
+  _removeFromQueue(id) {
+    this._coordinateQueue = this._coordinateQueue.filter(
+      (item) => item.id !== id
+    );
+    mapService.removeQueueMarker(id);
+    this._updateQueueUI();
+  }
+
+  /**
+   * Clear entire queue
+   * @private
+   */
+  _clearQueue() {
+    this._coordinateQueue = [];
+    mapService.clearQueueMarkers();
+    this._updateQueueUI();
+    this._hideStatus();
+  }
+
+  /**
+   * Process all items in the queue - fetch parcels from ULDK
+   * @private
+   */
+  async _processQueue() {
+    if (this._coordinateQueue.length === 0) {
+      this._showStatus("Kolejka jest pusta", "error");
+      return;
+    }
+
+    const itemsToProcess = [...this._coordinateQueue];
+    const total = itemsToProcess.length;
+
+    this._showStatus(`Pobieram działki... (0/${total})`, "loading");
+    this._elements.processQueueBtn.disabled = true;
+    this._elements.processQueueBtn.innerHTML =
+      '<span class="loading-spinner"></span>';
+
+    let successCount = 0;
+    let errorCount = 0;
+    let completedCount = 0;
+
+    // Update progress display
+    const updateProgress = () => {
+      this._showStatus(
+        `Pobieram działki... (${completedCount}/${total})`,
+        "loading"
+      );
+    };
+
+    // Process all coordinates in parallel, updating progress as each completes
+    const results = await Promise.allSettled(
+      itemsToProcess.map(async (item) => {
+        try {
+          const result = await uldkService.getParcelByCoordinates(
+            item.lng,
+            item.lat
+          );
+          completedCount++;
+          updateProgress();
+          return { item, result, success: true };
+        } catch (error) {
+          completedCount++;
+          updateProgress();
+          return { item, error: error.message, success: false };
+        }
+      })
+    );
+
+    // Add successful parcels to list
+    for (const outcome of results) {
+      if (outcome.status === "fulfilled" && outcome.value.success) {
+        try {
+          await this._addParcelToList(outcome.value.result, {
+            fitBounds: false,
+          });
+          successCount++;
+        } catch (error) {
+          console.warn("Failed to add parcel:", error.message);
+          errorCount++;
+        }
+      } else {
+        errorCount++;
+      }
+    }
+
+    // Clear queue after processing
+    this._clearQueue();
+
+    // Restore button
+    this._elements.processQueueBtn.disabled = false;
+    this._elements.processQueueBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+      </svg>
+      Start
+    `;
+
+    // Fit bounds to show all parcels
+    if (successCount > 0) {
+      mapService.fitToPolygons();
+    }
+
+    // Show final status
+    if (errorCount === 0) {
+      this._showStatus(`Pobrano ${successCount} działek`, "success");
+    } else {
+      this._showStatus(
+        `Pobrano ${successCount} działek, ${errorCount} błędów`,
+        errorCount === total ? "error" : "success"
+      );
+    }
+  }
+
+  /**
+   * Update queue UI
+   * @private
+   */
+  _updateQueueUI() {
+    const queue = this._coordinateQueue;
+    const container = this._elements.queueItems;
+    const queueSection = this._elements.coordinateQueue;
+
+    // Show/hide queue section
+    queueSection.style.display = queue.length > 0 ? "block" : "none";
+
+    // Update count
+    this._elements.queueCount.textContent = queue.length;
+
+    // Render queue items
+    if (queue.length === 0) {
+      container.innerHTML = "";
+      return;
+    }
+
+    container.innerHTML = queue
+      .map(
+        (item) => `
+        <div class="queue-item" data-id="${item.id}">
+          <span class="queue-coords">${item.lat.toFixed(6)}, ${item.lng.toFixed(
+          6
+        )}</span>
+          ${
+            item.label
+              ? `<span class="queue-label" title="${item.label}">${item.label}</span>`
+              : ""
+          }
+          <button class="btn-remove" title="Usuń z kolejki">×</button>
+        </div>
+      `
+      )
+      .join("");
+
+    // Attach remove handlers
+    container.querySelectorAll(".btn-remove").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const id = Number.parseInt(
+          e.target.closest(".queue-item").dataset.id,
+          10
+        );
+        this._removeFromQueue(id);
+      });
+    });
   }
 
   /**
@@ -597,14 +854,6 @@ class App {
         <line x1="5" y1="12" x2="19" y2="12"></line>
       </svg>`;
     }
-  }
-
-  /**
-   * Set search loading state
-   * @private
-   */
-  _setSearchLoading(loading) {
-    this._elements.searchContainer.classList.toggle("loading", loading);
   }
 
   /**

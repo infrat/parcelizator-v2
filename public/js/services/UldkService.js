@@ -77,6 +77,30 @@ class UldkService {
   }
 
   /**
+   * Check if error is retryable (transient ULDK errors)
+   * @private
+   */
+  _isRetryableError(error) {
+    const retryableMessages = [
+      "brak wyników",
+      "błędny format odpowiedzi XML",
+      "usługa zwróciła odpowiedź",
+      "Nie znaleziono działki", // Sometimes transient
+    ];
+
+    const message = error.message?.toLowerCase() || "";
+    return retryableMessages.some((msg) => message.includes(msg.toLowerCase()));
+  }
+
+  /**
+   * Delay helper for retry logic
+   * @private
+   */
+  _delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
    * Fetch parcel geometry by coordinates (WGS84)
    *
    * @param {number} lng - Longitude (WGS84)
@@ -109,32 +133,59 @@ class UldkService {
   }
 
   /**
-   * Common fetch and parse logic
+   * Common fetch and parse logic with retry for transient errors
    * @private
+   * @param {string} url - URL to fetch
+   * @param {number} maxRetries - Maximum number of retry attempts
+   * @param {number} retryDelay - Initial delay between retries in ms
    */
-  async _fetchAndParse(url) {
-    try {
-      const response = await fetch(url);
+  async _fetchAndParse(url, maxRetries = 2, retryDelay = 500) {
+    let lastError;
 
-      if (!response.ok) {
-        throw new Error(
-          `Błąd sieci: ${response.status} ${response.statusText}`
-        );
-      }
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(url);
 
-      const text = await response.text();
-      return this._parseResponse(text);
-    } catch (error) {
-      if (
-        error.name === "TypeError" &&
-        error.message.includes("Failed to fetch")
-      ) {
-        throw new Error(
-          "Brak połączenia z serwerem ULDK. Sprawdź połączenie internetowe."
-        );
+        if (!response.ok) {
+          throw new Error(
+            `Błąd sieci: ${response.status} ${response.statusText}`
+          );
+        }
+
+        const text = await response.text();
+        return this._parseResponse(text);
+      } catch (error) {
+        lastError = error;
+
+        // Check if it's a network error (no connection)
+        if (
+          error.name === "TypeError" &&
+          error.message.includes("Failed to fetch")
+        ) {
+          throw new Error(
+            "Brak połączenia z serwerem ULDK. Sprawdź połączenie internetowe."
+          );
+        }
+
+        // Check if error is retryable and we have retries left
+        if (this._isRetryableError(error) && attempt < maxRetries) {
+          console.warn(
+            `ULDK request failed (attempt ${attempt + 1}/${
+              maxRetries + 1
+            }), retrying in ${retryDelay}ms...`,
+            error.message
+          );
+          await this._delay(retryDelay);
+          // Exponential backoff
+          retryDelay *= 2;
+          continue;
+        }
+
+        throw error;
       }
-      throw error;
     }
+
+    throw lastError;
   }
 }
 

@@ -12,6 +12,8 @@ class MapService {
   _polygonLayer = null;
   _pointsLayer = null;
   _markerLayer = null;
+  _queueMarkersLayer = null;
+  _queueMarkers = {}; // Map of id -> marker
   _wmsLayer = null;
   _onMapClickCallback = null;
 
@@ -45,6 +47,7 @@ class MapService {
     this._polygonLayer = L.featureGroup().addTo(this._map);
     this._pointsLayer = L.featureGroup().addTo(this._map);
     this._markerLayer = L.featureGroup().addTo(this._map);
+    this._queueMarkersLayer = L.featureGroup().addTo(this._map);
 
     // Initialize WMS cadastral layer (GUGiK KIEG)
     this._initWmsLayer();
@@ -287,6 +290,46 @@ class MapService {
   }
 
   /**
+   * Add a queue marker (temporary pin for coordinate queue)
+   * @param {number} lat - Latitude
+   * @param {number} lng - Longitude
+   * @param {string|number} id - Unique identifier for this marker
+   * @returns {string|number} The marker id
+   */
+  addQueueMarker(lat, lng, id) {
+    if (!this._queueMarkersLayer) return id;
+
+    const marker = L.marker([lat, lng], {
+      title: `Punkt ${id}`,
+    }).addTo(this._queueMarkersLayer);
+
+    this._queueMarkers[id] = marker;
+    return id;
+  }
+
+  /**
+   * Remove a specific queue marker by id
+   * @param {string|number} id - The marker id
+   */
+  removeQueueMarker(id) {
+    const marker = this._queueMarkers[id];
+    if (marker && this._queueMarkersLayer) {
+      this._queueMarkersLayer.removeLayer(marker);
+      delete this._queueMarkers[id];
+    }
+  }
+
+  /**
+   * Clear all queue markers
+   */
+  clearQueueMarkers() {
+    if (this._queueMarkersLayer) {
+      this._queueMarkersLayer.clearLayers();
+      this._queueMarkers = {};
+    }
+  }
+
+  /**
    * Fit map bounds to show all content in polygon layer
    */
   fitToPolygons() {
@@ -313,7 +356,7 @@ class MapService {
   }
 
   /**
-   * Pan and zoom to specific location
+   * Pan and zoom to specific location (animated)
    *
    * @param {number} lat - Latitude
    * @param {number} lng - Longitude
@@ -321,6 +364,17 @@ class MapService {
    */
   flyTo(lat, lng, zoom = 17) {
     this._map.flyTo([lat, lng], zoom);
+  }
+
+  /**
+   * Set view to specific location (instant, no animation)
+   *
+   * @param {number} lat - Latitude
+   * @param {number} lng - Longitude
+   * @param {number} zoom - Zoom level
+   */
+  setView(lat, lng, zoom = 18) {
+    this._map.setView([lat, lng], zoom);
   }
 
   /**
