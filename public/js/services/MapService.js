@@ -446,9 +446,16 @@ class MapService {
       },
 
       onAdd: () => {
-        const container = L.DomUtil.create("div", "leaflet-bar leaflet-control leaflet-control-geolocation");
-        const button = L.DomUtil.create("a", "leaflet-control-geolocation-button", container);
-        
+        const container = L.DomUtil.create(
+          "div",
+          "leaflet-bar leaflet-control leaflet-control-geolocation"
+        );
+        const button = L.DomUtil.create(
+          "a",
+          "leaflet-control-geolocation-button",
+          container
+        );
+
         button.href = "#";
         button.title = "Moja lokalizacja";
         button.setAttribute("role", "button");
