@@ -36,7 +36,7 @@ Aplikacja korzysta z publicznych API:
 
 ```bash
 # Sklonuj repozytorium
-git clone https://github.com/TWOJA_NAZWA_UZYTKOWNIKA/parcelizator-v2.git
+git clone https://github.com/infrat/parcelizator-v2.git
 cd parcelizator-v2
 
 # Uruchom lokalny serwer (Python 3)
