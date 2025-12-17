@@ -2,7 +2,7 @@
 
 Aplikacja webowa do pobierania i wizualizacji geometrii działek ewidencyjnych z wykorzystaniem API ULDK (GUGiK).
 
-🌐 **[Otwórz aplikację](https://TWOJA_NAZWA_UZYTKOWNIKA.github.io/parcelizator-v2/)**
+🌐 **[Otwórz aplikację](https://infrat.github.io/parcelizator-v2/)**
 
 ## Funkcjonalności
 
