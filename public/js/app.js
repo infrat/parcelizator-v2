@@ -9,6 +9,7 @@ import { SearchType } from "./config.js";
 import { searchService } from "./services/SearchService.js";
 import { uldkService } from "./services/UldkService.js";
 import { mapService } from "./services/MapService.js";
+import { analyticsService } from "./services/AnalyticsService.js";
 import { parseWkt, extractVertices } from "./utils/WktParser.js";
 import { downloadKmlWithLayers } from "./utils/KmlExporter.js";
 import { downloadGpkgWithLayers } from "./utils/GeopkgExporter.js";
@@ -40,6 +41,9 @@ class App {
     this._initializeMap();
     this._bindEventListeners();
     this._updateUI();
+    
+    // Initialize analytics (handles consent banner)
+    analyticsService.initialize();
 
     console.log("Parcelizator initialized");
   }
@@ -131,6 +135,11 @@ class App {
 
     this._elements.clearQueueBtn.addEventListener("click", () => {
       this._clearQueue();
+    });
+
+    // Queue mode toggle
+    this._elements.queueModeCheckbox.addEventListener("change", (e) => {
+      analyticsService.trackQueueModeToggle(e.target.checked);
     });
 
     // Close search results when clicking outside
@@ -246,7 +255,7 @@ class App {
           coords.lng,
           coords.lat
         );
-        await this._addParcelToList(result);
+        await this._addParcelToList(result, { method: "coordinates" });
         this._elements.searchInput.value = "";
       } catch (error) {
         this._showStatus(error.message, "error");
@@ -266,7 +275,7 @@ class App {
 
     try {
       const result = await uldkService.getParcelById(parcelId);
-      await this._addParcelToList(result);
+      await this._addParcelToList(result, { method: "parcel_id" });
     } catch (error) {
       this._showStatus(error.message, "error");
     } finally {
@@ -303,7 +312,7 @@ class App {
           Number.parseFloat(lng),
           Number.parseFloat(lat)
         );
-        await this._addParcelToList(result);
+        await this._addParcelToList(result, { method: "address" });
       } catch (error) {
         this._showStatus(error.message, "error");
       } finally {
@@ -330,7 +339,7 @@ class App {
       this._setAddButtonLoading(true);
       try {
         const result = await uldkService.getParcelByCoordinates(lng, lat);
-        await this._addParcelToList(result, { fitBounds: false });
+        await this._addParcelToList(result, { fitBounds: false, method: "map_click" });
       } catch (error) {
         this._showStatus(error.message, "error");
       } finally {
@@ -346,7 +355,7 @@ class App {
    * @param {boolean} options.fitBounds - Whether to fit map bounds to the new parcel
    * @private
    */
-  async _addParcelToList(result, { fitBounds = true } = {}) {
+  async _addParcelToList(result, { fitBounds = true, method = "unknown" } = {}) {
     try {
       // Check if parcel already in list
       if (this._parcels.some((p) => p.id === result.id)) {
@@ -385,6 +394,9 @@ class App {
       this._updateUI();
       this._updateStats();
       this._showStatus(`Dodano działkę: ${result.id}`, "success");
+      
+      // Track analytics
+      analyticsService.trackParcelAdd(method, result.id);
     } catch (error) {
       console.error("Error adding parcel:", error);
       throw new Error("Błąd przetwarzania geometrii działki");
@@ -535,6 +547,7 @@ class App {
         try {
           await this._addParcelToList(outcome.value.result, {
             fitBounds: false,
+            method: "queue",
           });
           successCount++;
         } catch (error) {
@@ -562,6 +575,9 @@ class App {
     if (successCount > 0) {
       mapService.fitToPolygons();
     }
+
+    // Track queue processing
+    analyticsService.trackQueueProcess(total, successCount, errorCount);
 
     // Show final status
     if (errorCount === 0) {
@@ -704,6 +720,9 @@ class App {
       if (this._showingPolygons) layers.push("obrysy");
       if (this._showingPoints) layers.push("punkty");
       this._showStatus(`Pobrano plik KML (${layers.join(", ")})`, "success");
+      
+      // Track analytics
+      analyticsService.trackFileDownload("kml", this._parcels.length);
     } catch (error) {
       console.error("KML generation error:", error);
       this._showStatus("Błąd generowania pliku KML", "error");
@@ -743,6 +762,9 @@ class App {
         `Pobrano plik GeoPackage (${layers.join(", ")})`,
         "success"
       );
+      
+      // Track analytics
+      analyticsService.trackFileDownload("gpkg", this._parcels.length);
     } catch (error) {
       console.error("GeoPackage generation error:", error);
       this._showStatus("Błąd generowania pliku GeoPackage", "error");
@@ -780,6 +802,9 @@ class App {
         `Pobrano plik GeoJSON (${layers.join(", ")})`,
         "success"
       );
+      
+      // Track analytics
+      analyticsService.trackFileDownload("geojson", this._parcels.length);
     } catch (error) {
       console.error("GeoJSON generation error:", error);
       this._showStatus("Błąd generowania pliku GeoJSON", "error");
@@ -945,9 +970,8 @@ class App {
     if (areaM2 >= 10000) {
       // Show in hectares if >= 1 ha
       return (areaM2 / 10000).toFixed(2) + " ha";
-    } else {
-      return Math.round(areaM2).toLocaleString("pl-PL") + " m²";
     }
+    return Math.round(areaM2).toLocaleString("pl-PL") + " m²";
   }
 
   /**

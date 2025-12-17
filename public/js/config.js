@@ -68,6 +68,24 @@ export const CONFIG = {
     FIT_BOUNDS_PADDING: [50, 50],
   },
 
+  // Google Analytics
+  ANALYTICS: {
+    // Placeholder replaced during deploy by GitHub Actions
+    GA_MEASUREMENT_ID: "GA_MEASUREMENT_ID_PLACEHOLDER",
+    // Debug mode - logs events to console instead of sending to GA
+    DEBUG: window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1",
+    // LocalStorage key for consent
+    CONSENT_KEY: "parcelizator_analytics_consent",
+    // Event names
+    EVENTS: {
+      PARCEL_ADD: "parcel_add",
+      PARCEL_ADD_ERROR: "parcel_add_error",
+      QUEUE_PROCESS: "queue_process",
+      FILE_DOWNLOAD: "file_download",
+      QUEUE_MODE_TOGGLE: "queue_mode_toggle",
+    },
+  },
+
   // Regex patterns for search type detection
   PATTERNS: {
     // Matches: "50.1234, 19.5678" or "50.1234 19.5678" or "50,1234; 19,5678"

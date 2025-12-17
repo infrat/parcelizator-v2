@@ -1005,3 +1005,55 @@ footer {
 .radio-label input[type="radio"] {
   accent-color: #667eea;
 }
+
+/* Cookie consent banner */
+.cookie-consent-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(30, 30, 30, 0.95);
+  color: white;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  z-index: 10000;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  flex-wrap: wrap;
+}
+
+.cookie-consent-banner p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.cookie-consent-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.cookie-consent-buttons .btn {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+
+.cookie-consent-buttons .btn-secondary {
+  background: transparent;
+  border: 1px solid #888;
+  color: #ddd;
+}
+
+.cookie-consent-buttons .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #aaa;
+}
+
+@media (max-width: 600px) {
+  .cookie-consent-banner {
+    flex-direction: column;
+    text-align: center;
+  }
+}
