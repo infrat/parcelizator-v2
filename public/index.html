@@ -39,15 +39,38 @@
               </svg>
             </button>
           </div>
-          <div class="search-loading"></div>
           <div class="search-results" id="searchResults"></div>
+          <div class="queue-mode-toggle">
+            <label class="checkbox-label">
+              <input type="checkbox" id="queueModeCheckbox">
+              <span>Tryb kolejkowania</span>
+            </label>
+            <span class="help-icon" title="Tryb polecany w przypadku dużego obciążenia ULDK. Punkty są zbierane do kolejki, a następnie pobierane zbiorczo.">?</span>
+          </div>
+        </div>
+
+        <!-- Coordinate queue -->
+        <div class="coordinate-queue" id="coordinateQueue" style="display: none;">
+          <div class="coordinate-queue-header">
+            <h3>Kolejka (<span id="queueCount">0</span>)</h3>
+            <div class="queue-actions">
+              <button class="btn-process-queue" id="processQueueBtn" title="Wyszukaj działki dla wszystkich punktów">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                Start
+              </button>
+              <button class="btn-clear-queue" id="clearQueueBtn" title="Wyczyść kolejkę">×</button>
+            </div>
+          </div>
+          <div class="coordinate-queue-items" id="queueItems"></div>
         </div>
 
         <!-- Parcel list -->
         <div class="parcel-list" id="parcelList" style="display: none;">
           <div class="parcel-list-header">
             <h3>Wybrane działki (<span id="parcelListCount">0</span>)</h3>
-            <button class="btn-clear-all" id="clearAllParcelsBtn">Wyczyść wszystko</button>
+            <button class="btn-clear-all" id="clearAllParcelsBtn" title="Wyczyść wszystko">×</button>
           </div>
           <div class="parcel-list-items" id="parcelListItems">
             <div class="parcel-list-empty">Brak wybranych działek</div>
@@ -81,30 +104,32 @@
             Punkty
           </button>
         </div>
-        <button class="btn btn-primary" id="downloadKmlBtn" disabled>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          Pobierz KML
-        </button>
-        <button class="btn btn-primary" id="downloadGpkgBtn" disabled>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          Pobierz GPKG
-        </button>
-        <button class="btn btn-primary" id="downloadGeojsonBtn" disabled>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          Pobierz GeoJSON
-        </button>
+        <div class="download-buttons">
+          <button class="btn btn-primary" id="downloadKmlBtn" disabled title="Pobierz KML">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            KML
+          </button>
+          <button class="btn btn-primary" id="downloadGpkgBtn" disabled title="Pobierz GeoPackage">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            GPKG
+          </button>
+          <button class="btn btn-primary" id="downloadGeojsonBtn" disabled title="Pobierz GeoJSON">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            GeoJSON
+          </button>
+        </div>
 
         <div id="status"></div>
 
