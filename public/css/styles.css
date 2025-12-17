@@ -234,6 +234,10 @@ header p {
   border-radius: 6px;
 }
 
+.stat-item-wide {
+  grid-column: 1 / -1;
+}
+
 .stat-value {
   font-size: 1.5rem;
   font-weight: 700;

@@ -75,6 +75,7 @@ class App {
       stats: document.getElementById("stats"),
       parcelCount: document.getElementById("parcelCount"),
       pointCount: document.getElementById("pointCount"),
+      totalArea: document.getElementById("totalArea"),
       coordinatesBadge: document.querySelector(
         ".search-type-badge.coordinates"
       ),
@@ -890,9 +891,63 @@ class App {
       0
     );
 
+    // Calculate total area from all parcels
+    const totalArea = this._parcels.reduce(
+      (sum, p) => sum + this._calculatePolygonArea(p.vertices),
+      0
+    );
+
     this._elements.stats.style.display = "block";
     this._elements.parcelCount.textContent = this._parcels.length.toString();
     this._elements.pointCount.textContent = totalPoints.toString();
+    this._elements.totalArea.textContent = this._formatArea(totalArea);
+  }
+
+  /**
+   * Calculate polygon area using Shoelace formula
+   * Converts lat/lng to approximate meters first
+   * @param {Array<{lat: number, lng: number}>} vertices
+   * @returns {number} Area in square meters
+   * @private
+   */
+  _calculatePolygonArea(vertices) {
+    if (!vertices || vertices.length < 3) return 0;
+
+    // Convert to approximate meters using center point as reference
+    const centerLat =
+      vertices.reduce((sum, v) => sum + v.lat, 0) / vertices.length;
+    const metersPerDegreeLat = 111320; // ~111km per degree latitude
+    const metersPerDegreeLng = 111320 * Math.cos((centerLat * Math.PI) / 180);
+
+    const coords = vertices.map((v) => ({
+      x: v.lng * metersPerDegreeLng,
+      y: v.lat * metersPerDegreeLat,
+    }));
+
+    // Shoelace formula
+    let area = 0;
+    for (let i = 0; i < coords.length; i++) {
+      const j = (i + 1) % coords.length;
+      area += coords[i].x * coords[j].y;
+      area -= coords[j].x * coords[i].y;
+    }
+
+    return Math.abs(area / 2);
+  }
+
+  /**
+   * Format area for display
+   * @param {number} areaM2 - Area in square meters
+   * @returns {string} Formatted area
+   * @private
+   */
+  _formatArea(areaM2) {
+    if (areaM2 >= 10000) {
+      // Show in hectares if >= 1 ha
+      return (areaM2 / 10000).toFixed(2) + " ha";
+    } else {
+      return Math.round(areaM2).toLocaleString("pl-PL") + " m²";
+    }
   }
 
   /**
