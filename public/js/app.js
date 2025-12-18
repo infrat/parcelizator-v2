@@ -70,6 +70,7 @@ class App {
       parcelListItems: document.getElementById("parcelListItems"),
       parcelListCount: document.getElementById("parcelListCount"),
       clearAllParcelsBtn: document.getElementById("clearAllParcelsBtn"),
+      utilitiesLayerCheckbox: document.getElementById("utilitiesLayerCheckbox"),
       showPolygonsBtn: document.getElementById("showPolygonsBtn"),
       showPointsBtn: document.getElementById("showPointsBtn"),
       downloadKmlBtn: document.getElementById("downloadKmlBtn"),
@@ -140,6 +141,11 @@ class App {
     // Queue mode toggle
     this._elements.queueModeCheckbox.addEventListener("change", (e) => {
       analyticsService.trackQueueModeToggle(e.target.checked);
+    });
+
+    // Utilities layer toggle
+    this._elements.utilitiesLayerCheckbox.addEventListener("change", (e) => {
+      mapService.toggleUtilitiesLayer(e.target.checked);
     });
 
     // Close search results when clicking outside

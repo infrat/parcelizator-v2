@@ -40,11 +40,32 @@ export const CONFIG = {
   MAP: {
     CENTER: [52.0, 19.0], // Center of Poland
     ZOOM: 6,
-    TILE_URL: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    TILE_ATTRIBUTION:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     MAX_ZOOM: 22,
-    MAX_NATIVE_ZOOM: 19, // OSM tiles only go up to 19, Leaflet will scale beyond
+    MAX_NATIVE_ZOOM: 19,
+  },
+
+  // Base map layers
+  BASEMAPS: {
+    OSM: {
+      name: "OpenStreetMap",
+      url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxNativeZoom: 19,
+    },
+    GOOGLE_SATELLITE: {
+      name: "Google Satellite",
+      url: "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+      attribution: "&copy; Google",
+      maxNativeZoom: 20,
+    },
+    ORTO: {
+      name: "Ortofotomapa",
+      url: "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      attribution:
+        '&copy; <a href="https://www.esri.com">Esri</a>, Maxar, Earthstar Geographics',
+      maxNativeZoom: 20,
+    },
   },
 
   // WMS - Cadastral map overlay (GUGiK KIEG)
@@ -55,6 +76,14 @@ export const CONFIG = {
     MIN_ZOOM: 17, // Show WMS only at zoom 17 and above
     ATTRIBUTION: '&copy; <a href="https://www.geoportal.gov.pl">GUGiK</a>',
     TILE_SIZE: 1024, // Larger tiles for better quality (default is 256)
+  },
+
+  // WMS - Utilities integration (KUIT - Krajowa Integracja Uzbrojenia Terenu)
+  WMS_UTILITIES: {
+    URL: "https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaUzbrojeniaTerenu",
+    LAYERS: "przewod_wodociagowy,przewod_kanalizacyjny,przewod_gazowy,przewod_elektroenergetyczny,przewod_cieplowniczy,przewod_telekomunikacyjny,przewod_specjalny,przewod_niezidentyfikowany,przewod_urzadzenia",
+    MIN_ZOOM: 17,
+    ATTRIBUTION: '&copy; <a href="https://www.geoportal.gov.pl">GUGiK</a>',
   },
 
   // UI constants

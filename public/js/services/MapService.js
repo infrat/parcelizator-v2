@@ -15,9 +15,12 @@ class MapService {
   _queueMarkersLayer = null;
   _queueMarkers = {}; // Map of id -> marker
   _wmsLayer = null;
+  _wmsUtilitiesLayer = null;
   _onMapClickCallback = null;
   _locationMarker = null;
   _locationCircle = null;
+  _baseLayer = null;
+  _baseLayers = {};
 
   /**
    * Initialize Leaflet map
@@ -39,11 +42,8 @@ class MapService {
       maxZoom: CONFIG.MAP.MAX_ZOOM,
     }).setView(CONFIG.MAP.CENTER, CONFIG.MAP.ZOOM);
 
-    L.tileLayer(CONFIG.MAP.TILE_URL, {
-      attribution: CONFIG.MAP.TILE_ATTRIBUTION,
-      maxZoom: CONFIG.MAP.MAX_ZOOM,
-      maxNativeZoom: CONFIG.MAP.MAX_NATIVE_ZOOM, // Scale tiles beyond native zoom
-    }).addTo(this._map);
+    // Initialize base layers
+    this._initBaseLayers();
 
     // Initialize feature groups (featureGroup supports getBounds, layerGroup doesn't)
     this._polygonLayer = L.featureGroup().addTo(this._map);
@@ -68,6 +68,169 @@ class MapService {
   }
 
   /**
+   * Initialize base map layers and layer control
+   * @private
+   */
+  _initBaseLayers() {
+    const basemaps = CONFIG.BASEMAPS;
+
+    // Create OSM layer
+    this._baseLayers.OSM = L.tileLayer(basemaps.OSM.url, {
+      attribution: basemaps.OSM.attribution,
+      maxZoom: CONFIG.MAP.MAX_ZOOM,
+      maxNativeZoom: basemaps.OSM.maxNativeZoom,
+    });
+
+    // Create Google Satellite layer
+    this._baseLayers.GOOGLE_SATELLITE = L.tileLayer(
+      basemaps.GOOGLE_SATELLITE.url,
+      {
+        attribution: basemaps.GOOGLE_SATELLITE.attribution,
+        maxZoom: CONFIG.MAP.MAX_ZOOM,
+        maxNativeZoom: basemaps.GOOGLE_SATELLITE.maxNativeZoom,
+      }
+    );
+
+    // Create Ortofotomapa layer (WMTS with EPSG:3857)
+    this._baseLayers.ORTO = L.tileLayer(basemaps.ORTO.url, {
+      attribution: basemaps.ORTO.attribution,
+      maxZoom: CONFIG.MAP.MAX_ZOOM,
+      maxNativeZoom: basemaps.ORTO.maxNativeZoom,
+    });
+
+    // Set default layer (OSM)
+    this._baseLayer = this._baseLayers.OSM;
+    this._baseLayer.addTo(this._map);
+
+    // Add layer switcher control
+    this._initLayerSwitcher();
+  }
+
+  /**
+   * Initialize custom layer switcher control
+   * @private
+   */
+  _initLayerSwitcher() {
+    const self = this;
+
+    const LayerSwitcher = L.Control.extend({
+      options: {
+        position: "topright",
+      },
+
+      onAdd: function () {
+        const container = L.DomUtil.create(
+          "div",
+          "leaflet-bar leaflet-control leaflet-control-layers-switcher"
+        );
+
+        const button = L.DomUtil.create(
+          "a",
+          "leaflet-control-layers-toggle",
+          container
+        );
+        button.href = "#";
+        button.title = "Zmień mapę bazową";
+        button.setAttribute("role", "button");
+        button.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        `;
+
+        const dropdown = L.DomUtil.create("div", "layers-dropdown", container);
+        dropdown.style.display = "none";
+
+        const basemaps = CONFIG.BASEMAPS;
+        const layers = [
+          { key: "OSM", name: basemaps.OSM.name },
+          { key: "GOOGLE_SATELLITE", name: basemaps.GOOGLE_SATELLITE.name },
+          { key: "ORTO", name: basemaps.ORTO.name },
+        ];
+
+        layers.forEach((layer) => {
+          const item = L.DomUtil.create("div", "layer-item", dropdown);
+          item.textContent = layer.name;
+          item.dataset.layer = layer.key;
+          if (layer.key === "OSM") {
+            item.classList.add("active");
+          }
+
+          item.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            self._switchBaseLayer(layer.key);
+            dropdown
+              .querySelectorAll(".layer-item")
+              .forEach((el) => el.classList.remove("active"));
+            item.classList.add("active");
+            dropdown.style.display = "none";
+          });
+        });
+
+        // Prevent map interactions when clicking on control
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.disableScrollPropagation(container);
+
+        // Also prevent double-click zoom
+        container.addEventListener("dblclick", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
+
+        // Toggle dropdown on button click
+        button.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropdown.style.display =
+            dropdown.style.display === "none" ? "block" : "none";
+        });
+
+        // Close dropdown when clicking elsewhere on the document
+        document.addEventListener("click", (e) => {
+          if (!container.contains(e.target)) {
+            dropdown.style.display = "none";
+          }
+        });
+
+        return container;
+      },
+    });
+
+    new LayerSwitcher().addTo(this._map);
+  }
+
+  /**
+   * Switch to a different base layer
+   * @param {string} layerKey - Key from CONFIG.BASEMAPS (OSM, GOOGLE_SATELLITE, ORTO)
+   */
+  _switchBaseLayer(layerKey) {
+    if (!this._baseLayers[layerKey]) {
+      console.warn(`Unknown base layer: ${layerKey}`);
+      return;
+    }
+
+    // Save current view position and zoom
+    const currentCenter = this._map.getCenter();
+    const currentZoom = this._map.getZoom();
+
+    // Remove current base layer
+    if (this._baseLayer) {
+      this._map.removeLayer(this._baseLayer);
+    }
+
+    // Add new base layer (at the bottom)
+    this._baseLayer = this._baseLayers[layerKey];
+    this._baseLayer.addTo(this._map);
+    this._baseLayer.bringToBack();
+
+    // Restore view position and zoom (use setView with no animation to avoid glitches)
+    this._map.setView(currentCenter, currentZoom, { animate: false });
+  }
+
+  /**
    * Initialize WMS cadastral layer with zoom-based visibility
    * @private
    */
@@ -88,6 +251,35 @@ class MapService {
 
     // Add layer immediately - Leaflet handles zoom visibility via minZoom/maxZoom
     this._wmsLayer.addTo(this._map);
+
+    // Create WMS layer for utilities (KUIT - Krajowa Integracja Uzbrojenia Terenu)
+    // Layer is NOT added by default - controlled via checkbox
+    this._wmsUtilitiesLayer = L.tileLayer.wms(CONFIG.WMS_UTILITIES.URL, {
+      layers: CONFIG.WMS_UTILITIES.LAYERS,
+      format: "image/png",
+      transparent: true,
+      version: "1.1.1",
+      attribution: CONFIG.WMS_UTILITIES.ATTRIBUTION,
+      minZoom: CONFIG.WMS_UTILITIES.MIN_ZOOM,
+      maxZoom: CONFIG.MAP.MAX_ZOOM,
+      tileSize: CONFIG.WMS.TILE_SIZE, // Use same tile size as cadastral layer
+    });
+  }
+
+  /**
+   * Toggle utilities WMS layer visibility
+   * @param {boolean} visible - Whether the layer should be visible
+   */
+  toggleUtilitiesLayer(visible) {
+    if (!this._wmsUtilitiesLayer || !this._map) {
+      return;
+    }
+
+    if (visible) {
+      this._wmsUtilitiesLayer.addTo(this._map);
+    } else {
+      this._map.removeLayer(this._wmsUtilitiesLayer);
+    }
   }
 
   /**
