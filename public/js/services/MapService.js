@@ -21,6 +21,8 @@ class MapService {
   _locationCircle = null;
   _baseLayer = null;
   _baseLayers = {};
+  _loadingLayers = new Set(); // Track layers currently loading tiles
+  _loadingSpinner = null;
 
   /**
    * Initialize Leaflet map
@@ -57,6 +59,9 @@ class MapService {
     // Add geolocation control button
     this._initGeolocationControl();
 
+    // Add loading spinner control
+    this._initLoadingSpinnerControl();
+
     // Set up click handler
     this._map.on("click", (e) => {
       if (this._onMapClickCallback) {
@@ -80,6 +85,7 @@ class MapService {
       maxZoom: CONFIG.MAP.MAX_ZOOM,
       maxNativeZoom: basemaps.OSM.maxNativeZoom,
     });
+    this._attachLoadingEvents(this._baseLayers.OSM, "osm");
 
     // Create Google Satellite layer
     this._baseLayers.GOOGLE_SATELLITE = L.tileLayer(
@@ -90,6 +96,7 @@ class MapService {
         maxNativeZoom: basemaps.GOOGLE_SATELLITE.maxNativeZoom,
       }
     );
+    this._attachLoadingEvents(this._baseLayers.GOOGLE_SATELLITE, "google");
 
     // Create Ortofotomapa layer (WMTS with EPSG:3857)
     this._baseLayers.ORTO = L.tileLayer(basemaps.ORTO.url, {
@@ -97,6 +104,7 @@ class MapService {
       maxZoom: CONFIG.MAP.MAX_ZOOM,
       maxNativeZoom: basemaps.ORTO.maxNativeZoom,
     });
+    this._attachLoadingEvents(this._baseLayers.ORTO, "orto");
 
     // Set default layer (OSM)
     this._baseLayer = this._baseLayers.OSM;
@@ -248,6 +256,7 @@ class MapService {
       maxZoom: CONFIG.MAP.MAX_ZOOM,
       tileSize: CONFIG.WMS.TILE_SIZE,
     });
+    this._attachLoadingEvents(this._wmsLayer, "cadastral");
 
     // Add layer immediately - Leaflet handles zoom visibility via minZoom/maxZoom
     this._wmsLayer.addTo(this._map);
@@ -264,6 +273,39 @@ class MapService {
       maxZoom: CONFIG.MAP.MAX_ZOOM,
       tileSize: CONFIG.WMS.TILE_SIZE, // Use same tile size as cadastral layer
     });
+    this._attachLoadingEvents(this._wmsUtilitiesLayer, "utilities");
+  }
+
+  /**
+   * Attach loading/load events to a tile layer for spinner control
+   * @private
+   * @param {L.TileLayer} layer - The tile layer
+   * @param {string} layerId - Unique identifier for the layer
+   */
+  _attachLoadingEvents(layer, layerId) {
+    layer.on("loading", () => {
+      this._loadingLayers.add(layerId);
+      this._updateLoadingSpinner();
+    });
+
+    layer.on("load", () => {
+      this._loadingLayers.delete(layerId);
+      this._updateLoadingSpinner();
+    });
+  }
+
+  /**
+   * Update loading spinner visibility based on loading layers
+   * @private
+   */
+  _updateLoadingSpinner() {
+    if (!this._loadingSpinner) return;
+
+    if (this._loadingLayers.size > 0) {
+      this._loadingSpinner.style.display = "block";
+    } else {
+      this._loadingSpinner.style.display = "none";
+    }
   }
 
   /**
@@ -670,6 +712,42 @@ class MapService {
     });
 
     new GeolocationControl().addTo(this._map);
+  }
+
+  /**
+   * Initialize loading spinner control
+   * @private
+   */
+  _initLoadingSpinnerControl() {
+    const self = this;
+
+    const LoadingSpinnerControl = L.Control.extend({
+      options: {
+        position: "topright",
+      },
+
+      onAdd: function () {
+        const container = L.DomUtil.create(
+          "div",
+          "leaflet-bar leaflet-control leaflet-control-loading-spinner"
+        );
+        container.style.display = "none";
+
+        const inner = L.DomUtil.create(
+          "a",
+          "leaflet-control-loading-spinner-inner",
+          container
+        );
+        inner.innerHTML = `<div class="map-spinner"></div>`;
+
+        // Store reference to container
+        self._loadingSpinner = container;
+
+        return container;
+      },
+    });
+
+    new LoadingSpinnerControl().addTo(this._map);
   }
 
   /**

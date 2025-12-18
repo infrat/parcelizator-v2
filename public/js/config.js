@@ -81,7 +81,8 @@ export const CONFIG = {
   // WMS - Utilities integration (KUIT - Krajowa Integracja Uzbrojenia Terenu)
   WMS_UTILITIES: {
     URL: "https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaUzbrojeniaTerenu",
-    LAYERS: "przewod_wodociagowy,przewod_kanalizacyjny,przewod_gazowy,przewod_elektroenergetyczny,przewod_cieplowniczy,przewod_telekomunikacyjny,przewod_specjalny,przewod_niezidentyfikowany,przewod_urzadzenia",
+    LAYERS:
+      "przewod_wodociagowy,przewod_kanalizacyjny,przewod_gazowy,przewod_elektroenergetyczny,przewod_cieplowniczy,przewod_telekomunikacyjny,przewod_specjalny,przewod_niezidentyfikowany,przewod_urzadzenia",
     MIN_ZOOM: 17,
     ATTRIBUTION: '&copy; <a href="https://www.geoportal.gov.pl">GUGiK</a>',
   },
