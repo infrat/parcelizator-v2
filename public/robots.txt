@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://infrat.github.io/parcelizator-v2/sitemap.xml
