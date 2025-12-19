@@ -3,7 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Parcelizator</title>
+  
+  <!-- SEO Meta Tags -->
+  <title>Parcelizator - Wyszukiwarka działek katastralnych w Polsce | Mapa EGiB</title>
+  <meta name="description" content="Bezpłatne narzędzie do wyszukiwania i eksportu granic działek katastralnych w Polsce. Pobierz geometrię działek EGiB w formatach KML, GeoJSON, GeoPackage. Dane z ULDK GUGiK.">
+  <meta name="keywords" content="działki katastralne, EGiB, mapa działek, ULDK, GUGiK, granice działek, eksport KML, GeoJSON, geoportal, kataster, ewidencja gruntów, numer działki">
+  <meta name="author" content="Parcelizator">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://infrat.github.io/parcelizator-v2/">
+  
+  <!-- Open Graph (Facebook, LinkedIn) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Parcelizator - Wyszukiwarka działek katastralnych">
+  <meta property="og:description" content="Bezpłatne narzędzie do wyszukiwania i eksportu granic działek katastralnych w Polsce. Eksport do KML, GeoJSON, GeoPackage.">
+  <meta property="og:url" content="https://infrat.github.io/parcelizator-v2/">
+  <meta property="og:image" content="https://infrat.github.io/parcelizator-v2/og-image.png">
+  <meta property="og:locale" content="pl_PL">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Parcelizator - Wyszukiwarka działek katastralnych">
+  <meta name="twitter:description" content="Bezpłatne narzędzie do wyszukiwania i eksportu granic działek katastralnych w Polsce.">
+  <meta name="twitter:image" content="https://infrat.github.io/parcelizator-v2/og-image.png">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="Parcelizator">
+  <link rel="manifest" href="/site.webmanifest">
+  
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Parcelizator",
+    "description": "Bezpłatne narzędzie do wyszukiwania i eksportu granic działek katastralnych w Polsce",
+    "url": "https://infrat.github.io/parcelizator-v2/",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Web Browser",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "PLN"
+    },
+    "featureList": [
+      "Wyszukiwanie działek po numerze EGiB",
+      "Wyszukiwanie działek po współrzędnych GPS",
+      "Wyszukiwanie działek po adresie",
+      "Eksport do KML",
+      "Eksport do GeoJSON",
+      "Eksport do GeoPackage",
+      "Podgląd ortofotomapy",
+      "Warstwa katastralna WMS"
+    ]
+  }
+  </script>
   
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
@@ -18,6 +75,11 @@
 
     <div class="main-content">
       <aside class="sidebar">
+        <!-- App header with logo -->
+        <div class="app-header">
+          <img src="logo.svg" alt="Parcelizator" class="app-logo">
+        </div>
+
         <div class="section">
           <h2 class="section-header" onclick="toggleSection(this)">
             <span>Wyszukaj lokalizację</span>

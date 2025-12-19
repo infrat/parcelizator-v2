@@ -1,5 +1,9 @@
 # Parcelizator
 
+<p align="center">
+  <img src="public/logo.svg" alt="Parcelizator Logo" >
+</p>
+
 Aplikacja webowa do pobierania i wizualizacji geometrii działek ewidencyjnych z wykorzystaniem API ULDK (GUGiK).
 
 🌐 **[Otwórz aplikację](https://infrat.github.io/parcelizator-v2/)**
