@@ -36,6 +36,11 @@ jobs:
         run: |
           sed -i 's/GA_MEASUREMENT_ID_PLACEHOLDER/${{ vars.GA_MEASUREMENT_ID }}/g' public/js/config.js
 
+      - name: Inject commit SHA
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          sed -i "s/__COMMIT_SHA__/$SHORT_SHA/g" public/index.html
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

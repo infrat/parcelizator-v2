@@ -1000,10 +1000,9 @@ class App {
     const outerArea = this._calculateRingArea(rings[0]);
 
     // Subtract hole areas (subsequent rings)
-    const holesArea = rings.slice(1).reduce(
-      (sum, ring) => sum + this._calculateRingArea(ring),
-      0
-    );
+    const holesArea = rings
+      .slice(1)
+      .reduce((sum, ring) => sum + this._calculateRingArea(ring), 0);
 
     return outerArea - holesArea;
   }
