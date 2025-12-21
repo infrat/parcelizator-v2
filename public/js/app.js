@@ -952,9 +952,9 @@ class App {
       0
     );
 
-    // Calculate total area from all parcels
+    // Calculate total area from all parcels (using full geometry to account for holes)
     const totalArea = this._parcels.reduce(
-      (sum, p) => sum + this._calculatePolygonArea(p.vertices),
+      (sum, p) => sum + this._calculateGeometryArea(p.geometry),
       0
     );
 
@@ -965,13 +965,57 @@ class App {
   }
 
   /**
-   * Calculate polygon area using Shoelace formula
+   * Calculate geometry area accounting for holes in polygons
+   * Supports POLYGON and MULTIPOLYGON types
+   * @param {{type: string, coordinates: Array}} geometry - Parsed geometry object
+   * @returns {number} Area in square meters
+   * @private
+   */
+  _calculateGeometryArea(geometry) {
+    if (!geometry?.coordinates) return 0;
+
+    if (geometry.type === "POLYGON") {
+      return this._calculatePolygonAreaWithHoles(geometry.coordinates);
+    } else if (geometry.type === "MULTIPOLYGON") {
+      return geometry.coordinates.reduce(
+        (sum, polygon) => sum + this._calculatePolygonAreaWithHoles(polygon),
+        0
+      );
+    }
+
+    return 0;
+  }
+
+  /**
+   * Calculate polygon area with holes using Shoelace formula
+   * First ring is outer boundary (added), subsequent rings are holes (subtracted)
+   * @param {Array<Array<{lat: number, lng: number}>>} rings - Array of coordinate rings
+   * @returns {number} Area in square meters
+   * @private
+   */
+  _calculatePolygonAreaWithHoles(rings) {
+    if (!rings || rings.length === 0) return 0;
+
+    // Calculate outer ring area (first ring)
+    const outerArea = this._calculateRingArea(rings[0]);
+
+    // Subtract hole areas (subsequent rings)
+    const holesArea = rings.slice(1).reduce(
+      (sum, ring) => sum + this._calculateRingArea(ring),
+      0
+    );
+
+    return outerArea - holesArea;
+  }
+
+  /**
+   * Calculate ring area using Shoelace formula
    * Converts lat/lng to approximate meters first
    * @param {Array<{lat: number, lng: number}>} vertices
    * @returns {number} Area in square meters
    * @private
    */
-  _calculatePolygonArea(vertices) {
+  _calculateRingArea(vertices) {
     if (!vertices || vertices.length < 3) return 0;
 
     // Convert to approximate meters using center point as reference
